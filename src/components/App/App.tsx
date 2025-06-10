@@ -1,8 +1,56 @@
 import css from './App.module.css';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import ReactPaginate from 'react-paginate';
+import { fetchNotes } from '../../services/noteService';
+import { createPortal } from 'react-dom';
+import { Toaster } from 'react-hot-toast';
+import { useDebounce } from 'use-debounce';
+import NoteList from '../NoteList/NoteList';
+import Pagination from '../Pagination/Pagination';
+import NodeModal from '../NoteModal/NoteModal';
+import SearchBox from '../SearchBox/SearchBox';
 
 export default function App() {
-  return;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isModalOpened, setIsModalOpened] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery] = useDebounce(searchQuery, 300);
+
+  const { data } = useQuery({
+    queryKey: ['notes', currentPage, debouncedQuery],
+    queryFn: () => fetchNotes(currentPage, debouncedQuery),
+    placeholderData: keepPreviousData,
+  });
+
+  function handlePageChange(currentPage: number): void {
+    setCurrentPage(currentPage);
+  }
+
+  function handleModalOpener(): void {
+    setIsModalOpened(true);
+  }
+
+  return (
+    <div className={css.app}>
+      <header className={css.toolbar}>
+        <SearchBox onSearchChange={setSearchQuery} />
+        {data && data.totalPages > 1 && (
+          <Pagination
+            totalPages={data.totalPages}
+            currentPage={currentPage}
+            onPageChange={handlePageChange}
+          />
+        )}
+        <button className={css.button} onClick={handleModalOpener}>
+          Create note +
+        </button>
+      </header>
+      {createPortal(
+        isModalOpened && <NodeModal onClose={() => setIsModalOpened(false)} />,
+        document.body
+      )}
+      {data && data.notes.length !== 0 && <NoteList notes={data.notes} />}
+      <Toaster />
+    </div>
+  );
 }
