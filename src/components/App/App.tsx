@@ -2,7 +2,6 @@ import css from './App.module.css';
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { fetchNotes } from '../../services/noteService';
-import { createPortal } from 'react-dom';
 import { Toaster } from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
 import NoteList from '../NoteList/NoteList';
@@ -17,7 +16,7 @@ export default function App() {
   const [debouncedQuery] = useDebounce(searchQuery, 300);
 
   const { data } = useQuery({
-    queryKey: ['notes', currentPage, debouncedQuery],
+    queryKey: ['notes', debouncedQuery, currentPage],
     queryFn: () => fetchNotes(debouncedQuery, currentPage),
     placeholderData: keepPreviousData,
   });
@@ -30,10 +29,15 @@ export default function App() {
     setIsModalOpened(true);
   }
 
+  function handleSearchChange(query: string): void {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  }
+
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox value={searchQuery} onSearchChange={setSearchQuery} />
+        <SearchBox value={searchQuery} onSearchChange={handleSearchChange} />
         {data && data.totalPages > 1 && (
           <Pagination
             totalPages={data.totalPages}
@@ -45,11 +49,7 @@ export default function App() {
           Create note +
         </button>
       </header>
-      {isModalOpened &&
-        createPortal(
-          <NoteModal onClose={() => setIsModalOpened(false)} />,
-          document.body
-        )}
+      {isModalOpened && <NoteModal onClose={() => setIsModalOpened(false)} />}
       {data && data.notes.length !== 0 && <NoteList notes={data.notes} />}
       <Toaster />
     </div>

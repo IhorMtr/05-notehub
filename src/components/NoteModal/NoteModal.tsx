@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import css from './NoteModal.module.css';
 import NoteForm from '../NoteForm/NoteForm';
+import { createPortal } from 'react-dom';
 
 interface NoteModalProps {
   onClose: () => void;
@@ -35,7 +36,7 @@ export default function NoteModal({ onClose }: NoteModalProps) {
     }
   }
 
-  return (
+  const modal = (
     <div
       className={css.backdrop}
       role="dialog"
@@ -47,4 +48,6 @@ export default function NoteModal({ onClose }: NoteModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
