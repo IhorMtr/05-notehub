@@ -1,28 +1,50 @@
 import css from './NoteForm.module.css';
 import { useId } from 'react';
 import { Form, Formik, Field, ErrorMessage } from 'formik';
+import type { FormikHelpers } from 'formik';
 import { object, string } from 'yup';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createNote } from '../../services/noteService';
 import toast from 'react-hot-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
-export default function NoteForm() {
-  const notify = () => toast.error('Something went wrong, please, try again.');
+interface NoteFormProps {
+  onClose: () => void;
+}
+
+interface FormValues {
+  title: string;
+  content?: string;
+  tag: 'Todo' | 'Work' | 'Personal' | 'Meeting' | 'Shopping';
+}
+
+export default function NoteForm({ onClose }: NoteFormProps) {
   const fieldId = useId();
   const queryClient = useQueryClient();
 
+  const { mutateAsync } = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      toast.success('Note created successfully');
+      onClose();
+    },
+    onError: () => {
+      toast.error('Something went wrong, please, try again.');
+    },
+  });
+
+  const handleSubmit = async (
+    values: FormValues,
+    { resetForm }: FormikHelpers<FormValues>
+  ) => {
+    await mutateAsync(values);
+    resetForm();
+  };
+
   return (
     <Formik
-      initialValues={{ title: '', content: '', tag: '' }}
-      onSubmit={async (values, { resetForm }) => {
-        try {
-          await createNote(values);
-          resetForm();
-          queryClient.invalidateQueries({ queryKey: ['notes'] });
-        } catch {
-          notify();
-        }
-      }}
+      initialValues={{ title: '', content: '', tag: 'Todo' }}
+      onSubmit={handleSubmit}
       validationSchema={object({
         title: string()
           .min(3, 'Title must be at least 3 characters')
@@ -57,7 +79,7 @@ export default function NoteForm() {
               as="textarea"
               id={`${fieldId}-content`}
               name="content"
-              rows="8"
+              rows={8}
               className={css.textarea}
             />
             <ErrorMessage
@@ -85,7 +107,11 @@ export default function NoteForm() {
           </div>
 
           <div className={css.actions}>
-            <button type="button" className={css.cancelButton}>
+            <button
+              type="button"
+              className={css.cancelButton}
+              onClick={onClose}
+            >
               Cancel
             </button>
             <button

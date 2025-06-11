@@ -2,11 +2,20 @@ import { useEffect } from 'react';
 import css from './NoteModal.module.css';
 import NoteForm from '../NoteForm/NoteForm';
 
-interface NodeModalProps {
+interface NoteModalProps {
   onClose: () => void;
 }
 
-export default function NodeModal({ onClose }: NodeModalProps) {
+export default function NoteModal({ onClose }: NoteModalProps) {
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   useEffect(() => {
     function handleEscCloser(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -25,6 +34,7 @@ export default function NodeModal({ onClose }: NodeModalProps) {
       onClose();
     }
   }
+
   return (
     <div
       className={css.backdrop}
@@ -33,7 +43,7 @@ export default function NodeModal({ onClose }: NodeModalProps) {
       onClick={handleClickCloser}
     >
       <div className={css.modal}>
-        <NoteForm />
+        <NoteForm onClose={onClose} />
       </div>
     </div>
   );

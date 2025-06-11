@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
 import NoteList from '../NoteList/NoteList';
 import Pagination from '../Pagination/Pagination';
-import NodeModal from '../NoteModal/NoteModal';
+import NoteModal from '../NoteModal/NoteModal';
 import SearchBox from '../SearchBox/SearchBox';
 
 export default function App() {
@@ -18,7 +18,7 @@ export default function App() {
 
   const { data } = useQuery({
     queryKey: ['notes', currentPage, debouncedQuery],
-    queryFn: () => fetchNotes(currentPage, debouncedQuery),
+    queryFn: () => fetchNotes(debouncedQuery, currentPage),
     placeholderData: keepPreviousData,
   });
 
@@ -33,7 +33,7 @@ export default function App() {
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox onSearchChange={setSearchQuery} />
+        <SearchBox value={searchQuery} onSearchChange={setSearchQuery} />
         {data && data.totalPages > 1 && (
           <Pagination
             totalPages={data.totalPages}
@@ -45,10 +45,11 @@ export default function App() {
           Create note +
         </button>
       </header>
-      {createPortal(
-        isModalOpened && <NodeModal onClose={() => setIsModalOpened(false)} />,
-        document.body
-      )}
+      {isModalOpened &&
+        createPortal(
+          <NoteModal onClose={() => setIsModalOpened(false)} />,
+          document.body
+        )}
       {data && data.notes.length !== 0 && <NoteList notes={data.notes} />}
       <Toaster />
     </div>
